@@ -275,5 +275,78 @@
     }
     document.addEventListener('DOMContentLoaded', init);
   </script>
+<script>
+/* ===== Quick persistence + real "Add Service" (localStorage) ===== */
+(function(){
+  const STORAGE_KEY = 'umn.services.v1';
+  function isArray(x){return Array.isArray(x);}
+  function load(){ try{ const raw=localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):null; }catch(e){ console.warn('Load failed', e); return null; } }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(SERVICES)); }catch(e){ console.warn('Save failed', e); } }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      if (typeof SERVICES !== 'undefined' && isArray(SERVICES)) {
+        const saved = load();
+        if (saved && isArray(saved) && saved.length) {
+          // Replace contents while keeping the same array reference
+          SERVICES.splice(0, SERVICES.length, ...saved);
+          if (typeof renderServices==='function') renderServices();
+        } else {
+          // Persist initial seed once so it becomes stable
+          save();
+        }
+      }
+    }catch(e){ console.warn(e); }
+
+    // Simple "Add Service" flow using prompts (fastest way to be real)
+    function addServiceFlow(){
+      try{
+        const name = (prompt('Service name (required):','New Service')||'').trim();
+        if(!name) return alert('Service name is required.');
+        const owner = (prompt('Owner (optional):','')||'').trim() || '—';
+        const env = (prompt('Environment (Prod/Test/Dev):','Prod')||'Prod').trim();
+        const criticality = (prompt('Criticality (Tier 0/1/2/3):','Tier 2')||'Tier 2').trim();
+        const health = (prompt('Health (Healthy/At Risk/Incident):','Healthy')||'Healthy').trim();
+        const tags = (prompt('Tags (comma-separated):','')||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+        if(typeof SERVICES==='undefined' || !isArray(SERVICES)) return alert('SERVICES store not found.');
+
+        const nextId = SERVICES.length ? Math.max.apply(null, SERVICES.map(s=>+s.id||0)) + 1 : 1;
+        const svc = { id: nextId, name, owner, env, criticality, health, tags,
+                      servers:[], networks:[], rules:[] };
+
+        SERVICES.push(svc);
+        save();
+        if (typeof renderServices==='function') renderServices();
+        if (typeof openServiceDetail==='function') openServiceDetail(nextId);
+      }catch(e){ console.error(e); alert('Could not add service. See console.'); }
+    }
+
+    // Wire the buttons (IDs exist in your page)
+    const btns = [document.getElementById('btnAddServiceHome'),
+                  document.getElementById('btnAddService')].filter(Boolean);
+    btns.forEach(b => { b.onclick = addServiceFlow; });
+
+    // One‑click reset: add ?reset=1 to URL to clear local data, then reload
+    try{
+      const url = new URL(window.location.href);
+      if(url.searchParams.get('reset')==='1'){
+        localStorage.removeItem(STORAGE_KEY);
+        alert('Saved data cleared. Reloading…');
+        window.location.href = url.pathname; // drop query
+      }
+    }catch(e){}
+  });
+
+  // If the page already defines CRUD functions, wrap them to persist after use
+  const toWrap = ['saveService','removeService','saveServer','removeServer','saveNetwork','removeNetwork','saveRule','removeRule'];
+  toWrap.forEach(fn=>{
+    const orig = window[fn];
+    if (typeof orig === 'function'){
+      window[fn] = function(){ const r = orig.apply(this, arguments); try{ save(); }catch(e){} return r; };
+    }
+  });
+})();
+</script>  
 </body>
 </html>
