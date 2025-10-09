@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>UMN Change Console — Prototype v4b (fix)</title>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--panel-2:#0b1220;--text:#e5e7eb;--muted:#9ca3af;--primary:#60a5fa;--accent:#22d3ee;--warn:#f59e0b;--danger:#f87171;--success:#34d399;--card:#0b1220;--border:#1f2937}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#0a0f1d);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;background:rgba(11,18,32,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+    .navbar{display:flex;align-items:center;gap:16px}
+    .navbar a{color:var(--muted);text-decoration:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .navbar a.active,.navbar a:hover{color:#fff;background:rgba(96,165,250,.1)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand .dot{height:10px;width:10px;border-radius:50%;background:var(--accent)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--border);border-radius:14px;padding:16px}
+    .badge{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);padding:4px 8px;border-radius:999px;color:var(--muted)}
+    .badge.ok{color:var(--success);border-color:rgba(52,211,153,.3)}.badge.warn{color:var(--warn);border-color:rgba(245,158,11,.3)}.badge.danger{color:var(--danger);border-color:rgba(248,113,113,.3)}
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    .table thead th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;cursor:pointer}
+    .table tbody tr{background:var(--card);border:1px solid var(--border)}
+    .table tbody td{padding:10px 12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);color:#fff;background:rgba(96,165,250,.1);text-decoration:none;cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--primary),var(--accent));border:0}
+    .btn.success{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4)}
+    .btn.warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4)}
+    .btn.danger{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4)}
+    .btn.ghost{background:transparent}
+    .input,select,textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px}
+    .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+    .form-row{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .col-2{grid-column:span 2}.col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-5{grid-column:span 5}.col-6{grid-column:span 6}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+    .small{font-size:12px;color:var(--muted)} .right{margin-left:auto}
+    .breadcrumbs{color:var(--muted);font-size:12px;margin:12px 0}
+    .timeline{border-left:2px solid var(--border);padding-left:12px}
+    .timeline .event{position:relative;margin:14px 0;padding-left:8px}
+    .timeline .event:before{content:"";position:absolute;left:-13px;top:4px;height:10px;width:10px;border-radius:50%;background:var(--primary)}
+    hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+    section{display:none} section.active{display:block}
+    .toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;background:rgba(96,165,250,.1);border:1px solid var(--border);color:#cbd5e1}
+    .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#0b1220;border:1px solid var(--border);padding:10px 14px;border-radius:8px;display:none}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container navbar">
+      <div class="brand"><span class="dot"></span> UMN Change Console</div>
+      <a data-nav data-target="home">Home</a>
+      <a data-nav data-target="services">Services</a>
+      <a data-nav data-target="service">Service</a>
+      <a data-nav data-target="rule">Firewall Rule</a>
+      <a data-nav data-target="change">Change Request</a>
+      <a data-nav data-target="approvals">Approvals</a>
+      <a data-nav data-target="timeline">Timeline</a>
+      <div class="right small">Prototype v4b • No backend</div>
+    </div>
+  </header>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Home -->
+  <section id="home" class="active">
+    <div class="container">
+      <div class="breadcrumbs">Home</div>
+      <h1>Service Operations Overview</h1>
+      <div class="grid" style="margin-top:16px;">
+        <div class="card">
+          <h3>Services</h3>
+          <div class="small">Browse, add, edit, and remove services with search & filters.</div>
+          <div class="actions">
+            <a class="btn primary" data-nav data-target="services">Open Services Catalog</a>
+            <a class="btn" id="btnAddServiceHome">Add Service</a>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Firewall Rules</h3>
+          <div class="small">Panorama-managed rules per device group</div>
+          <a class="btn" data-nav data-target="rule">View Rule</a>
+        </div>
+        <div class="card">
+          <h3>Approvals</h3>
+          <div class="small">Architect approval workflow</div>
+          <a class="btn" data-nav data-target="approvals">Open Approvals</a>
+        </div>
+        <div class="card">
+          <h3>Change Timeline</h3>
+          <div class="small">End-to-end traceability</div>
+          <a class="btn" data-nav data-target="timeline">Open Timeline</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Catalog -->
+  <section id="services">
+    <div class="container">
+      <div class="breadcrumbs"><span data-nav data-target="home" style="cursor:pointer">Home</span> / Services</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <h1 style="margin:0;">Services Catalog</h1>
+        <a class="btn" id="btnAddService">Add Service</a>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <div class="toolbar form-row">
+          <div class="col-6">
+            <div class="label">Search (name or tags)</div>
+            <input id="f_q" class="input" placeholder="e.g., Payments, pci, dmz"/>
+          </div>
+          <div class="col-2"><div class="label">Environment</div>
+            <select id="f_env"><option>All</option><option>Prod</option><option>Test</option><option>Dev</option></select>
+          </div>
+          <div class="col-2"><div class="label">Criticality</div>
+            <select id="f_crit"><option>All</option><option>Tier 0</option><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option></select>
+          </div>
+          <div class="col-2"><div class="label">Owner</div>
+            <select id="f_owner"><option>All</option></select>
+          </div>
+          <div class="col-2"><div class="label">Health</div>
+            <select id="f_health"><option>All</option><option>Healthy</option><option>At Risk</option><option>Incident</option></select>
+          </div>
+          <div class="col-4"><div class="label">Tags (comma-separated)</div>
+            <input id="f_tags" class="input" placeholder="pci, api"/>
+          </div>
+          <div class="col-3"><div class="label">Sort</div>
+            <select id="f_sort">
+              <option value="name-asc">Name ↑</option>
+              <option value="name-desc">Name ↓</option>
+              <option value="owner-asc">Owner ↑</option>
+              <option value="owner-desc">Owner ↓</option>
+              <option value="env-asc">Env ↑</option>
+              <option value="env-desc">Env ↓</option>
+              <option value="criticality-asc">Criticality ↑</option>
+              <option value="criticality-desc">Criticality ↓</option>
+              <option value="health-asc">Health ↑</option>
+              <option value="health-desc">Health ↓</option>
+            </select>
+          </div>
+          <div class="col-2"><div class="label">Page Size</div>
+            <select id="f_pagesize"><option>12</option><option>25</option><option>50</option></select>
+          </div>
+          <div class="col-3 right" style="text-align:right"><div class="label">&nbsp;</div>
+            <span id="svc_count" class="small">0 results</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th data-sort="name">Name</th>
+              <th data-sort="env">Env</th>
+              <th data-sort="criticality">Criticality</th>
+              <th data-sort="owner">Owner</th>
+              <th data-sort="health">Health</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="svc_rows"></tbody>
+        </table>
+        <div id="pager" class="pager"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Service Detail (trimmed for brevity) -->
+  <section id="service">
+    <div class="container">
+      <div class="breadcrumbs"><span data-nav data-target="home" style="cursor:pointer">Home</span> / Service</div>
+      <div class="flex" style="gap:12px;align-items:center;">
+        <h1 id="svc_title" style="margin:0;">Service: Payments</h1>
+        <span id="svc_env" class="badge ok">Prod</span>
+        <span id="svc_owner" class="badge">Owner: Mika Berg</span>
+        <span id="svc_crit" class="badge">Criticality: Tier 1</span>
+        <span class="right"></span>
+        <a class="btn" id="btnEditService">Edit Service</a>
+        <a class="btn danger" id="btnRemoveService">Remove Service</a>
+      </div>
+
+      <div class="grid" style="margin-top:16px;">
+        <div class="card">
+          <div class="flex" style="align-items:center;gap:12px;">
+            <h3 style="margin:0;">Servers</h3>
+            <a class="btn" id="btnAddServer">Add Server</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Hostname</th><th>IP</th><th>Zone</th><th>OS</th><th></th></tr></thead>
+            <tbody id="srv_rows"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="flex" style="align-items:center;gap:12px;">
+            <h3 style="margin:0;">Networks</h3>
+            <a class="btn" id="btnAddNetwork">Add Network</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Subnet</th><th>VLAN</th><th>Zone</th><th></th></tr></thead>
+            <tbody id="net_rows"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="flex" style="align-items:center;gap:12px;">
+            <h3 style="margin:0;">Firewall Rules</h3>
+            <a class="btn" id="btnAddRule">Add Firewall Rule</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>Name</th><th>Zones</th><th>Src → Dst</th><th>Svc/Proto</th><th>Action</th><th>Device Group</th><th></th></tr></thead>
+            <tbody id="rule_rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Minimal stubs for other sections so navigation always finds elements -->
+  <section id="rule"><div class="container"><h1>Firewall Rule (detail)</h1><p class="small">Open a rule from the Service view to populate.</p></div></section>
+  <section id="change"><div class="container"><h1>Change Request</h1></div></section>
+  <section id="approvals"><div class="container"><h1>Approvals</h1></div></section>
+  <section id="timeline"><div class="container"><h1>Timeline</h1></div></section>
+
+  <script>
+    // FIX: sections list matches actual sections (no 'network'), and null-guards in show()
+    const sections=["home","services","service","rule","change","approvals","timeline"];
+
+    function show(id){
+      sections.forEach(s=>{
+        const el = document.getElementById(s);
+        if (el) el.classList.remove('active');
+      });
+      const targetEl = document.getElementById(id);
+      if (targetEl) targetEl.classList.add('active');
+      document.querySelectorAll('[data-nav]').forEach(a=>a.classList.remove('active'));
+      const navLink = document.querySelector(`[data-nav][data-target='${id}']`);
+      if (navLink) navLink.classList.add('active');
+      if(id==='services' && typeof renderServices==='function') renderServices();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    // --- minimal demo data to prove it renders ---
+    const SERVICES = [{id:1,name:'Payments',env:'Prod',criticality:'Tier 1',owner:'Mika Berg',tags:['pci','api'],health:'Healthy'}];
+    const state = { q:'', env:'All', crit:'All', owner:'All', health:'All', tags:'', sort:'name-asc', page:1, pageSize:12 };
+
+    function renderServices(){
+      const tbody=document.getElementById('svc_rows');
+      if(!tbody) return;
+      tbody.innerHTML = SERVICES.map(s=>`<tr>
+        <td><b>${s.name}</b><div class='small'><span class='pill'>${s.tags.join('</span> <span class="pill">')}</span></div></td>
+        <td>${s.env}</td><td>${s.criticality}</td><td>${s.owner}</td>
+        <td><span class='badge ok'>${s.health}</span></td>
+        <td><a class='btn' onclick='openServiceDetail(${s.id})'>Open</a></td>
+      </tr>`).join('');
+      const cnt=document.getElementById('svc_count'); if(cnt) cnt.textContent = `${SERVICES.length} result${SERVICES.length!==1?'s':''}`;
+    }
+
+    function openServiceDetail(id){
+      const s = SERVICES.find(x=>x.id===id) || SERVICES[0];
+      document.getElementById('svc_title').textContent=`Service: ${s.name}`;
+      document.getElementById('svc_owner').textContent=`Owner: ${s.owner}`;
+      document.getElementById('svc_env').innerHTML=`<span class='badge ok'>${s.env}</span>`;
+      document.getElementById('svc_crit').textContent=`Criticality: ${s.criticality}`;
+      show('service');
+    }
+
+    function init(){
+      // Start on Services so data is visible immediately
+      renderServices();
+      show('services');
+      // wire quick add buttons (no-op in this trimmed fix file)
+      const btn = document.getElementById('btnAddServiceHome'); if(btn) btn.addEventListener('click',()=>alert('Add Service (demo)'));
+      const btn2 = document.getElementById('btnAddService'); if(btn2) btn2.addEventListener('click',()=>alert('Add Service (demo)'));
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
