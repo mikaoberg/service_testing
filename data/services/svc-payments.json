@@ -1,0 +1,25 @@
+{
+  "id": "svc-payments",
+  "name": "Payments",
+  "owner": "Mika Berg",
+  "env": "Prod",
+  "criticality": "Tier 1",
+  "health": "Healthy",
+  "tags": ["pci", "api"],
+  "servers": [
+    { "hostname": "pay-app-01", "ip": "10.10.1.10", "zone": "dmz", "os": "Linux" }
+  ],
+  "networks": [
+    { "subnet": "10.10.1.0/24", "vlan": "210", "zone": "dmz" }
+  ],
+  "rules": [
+    {
+      "name": "Allow-POS-to-Payments",
+      "zones": "branch → dc",
+      "src_to_dst": "POS_subnets → pay-app-01",
+      "service": "tcp/443",
+      "action": "allow",
+      "device_group": "DG-Prod-Payments"
+    }
+  ]
+}
